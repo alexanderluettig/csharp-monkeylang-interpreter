@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonkeyLangInterpreter.Tests", "MonkeyLangInterpreter.Tests\MonkeyLangInterpreter.Tests.csproj", "{D10FA5BC-FAEF-4D68-909D-9EEB0395751F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonkeyLangInterpreter.Core", "MonkeyLangInterpreter.Core\MonkeyLangInterpreter.Core.csproj", "{7DEA5EE6-AAF4-4CCC-822A-D79E19ACEF72}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D10FA5BC-FAEF-4D68-909D-9EEB0395751F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D10FA5BC-FAEF-4D68-909D-9EEB0395751F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D10FA5BC-FAEF-4D68-909D-9EEB0395751F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D10FA5BC-FAEF-4D68-909D-9EEB0395751F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DEA5EE6-AAF4-4CCC-822A-D79E19ACEF72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DEA5EE6-AAF4-4CCC-822A-D79E19ACEF72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DEA5EE6-AAF4-4CCC-822A-D79E19ACEF72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DEA5EE6-AAF4-4CCC-822A-D79E19ACEF72}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
