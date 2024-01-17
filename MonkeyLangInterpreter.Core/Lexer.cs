@@ -22,46 +22,104 @@ public class Lexer
     public Token NextToken()
     {
         Token token;
-
         SkipWhitespace();
 
-        token = _ch switch
+        switch (_ch)
         {
-            '=' => new Token(TokenType.ASSIGN, _ch),
-            '+' => new Token(TokenType.PLUS, _ch),
-            '(' => new Token(TokenType.LPAREN, _ch),
-            ')' => new Token(TokenType.RPAREN, _ch),
-            '{' => new Token(TokenType.LBRACE, _ch),
-            '}' => new Token(TokenType.RBRACE, _ch),
-            ',' => new Token(TokenType.COMMA, _ch),
-            ';' => new Token(TokenType.SEMICOLON, _ch),
-            (char)0 => new Token(TokenType.EOF, _ch),
-            _ => CheckForIdentifierOrKeyword()
+            case '=':
+                if (PeekChar() == '=')
+                {
+                    var ch = _ch;
+                    ReadChar();
+                    token = new Token(TokenType.EQ, $"{ch}{_ch}");
+                }
+                else
+                {
+                    token = new Token(TokenType.ASSIGN, _ch);
+                }
+                break;
+            case '+':
+                token = new Token(TokenType.PLUS, _ch);
+                break;
+            case '-':
+                token = new Token(TokenType.MINUS, _ch);
+                break;
+            case '!':
+                if (PeekChar() == '=')
+                {
+                    var ch = _ch;
+                    ReadChar();
+                    token = new Token(TokenType.NOT_EQ, $"{ch}{_ch}");
+                }
+                else
+                {
+                    token = new Token(TokenType.BANG, _ch);
+                }
+                break;
+            case '*':
+                token = new Token(TokenType.ASTERISK, _ch);
+                break;
+            case '/':
+                token = new Token(TokenType.SLASH, _ch);
+                break;
+            case '<':
+                token = new Token(TokenType.LT, _ch);
+                break;
+            case '>':
+                token = new Token(TokenType.GT, _ch);
+                break;
+            case '(':
+                token = new Token(TokenType.LPAREN, _ch);
+                break;
+            case ')':
+                token = new Token(TokenType.RPAREN, _ch);
+                break;
+            case '{':
+                token = new Token(TokenType.LBRACE, _ch);
+                break;
+            case '}':
+                token = new Token(TokenType.RBRACE, _ch);
+                break;
+            case ',':
+                token = new Token(TokenType.COMMA, _ch);
+                break;
+            case ';':
+                token = new Token(TokenType.SEMICOLON, _ch);
+                break;
+            case (char)0:
+                token = new Token(TokenType.EOF, _ch);
+                break;
+            default:
+                if (IsLetter(_ch))
+                {
+                    var identifier = ReadIdentifier();
+                    return new Token(Token.LookupIdent(identifier), identifier);
+                }
+                else if (IsDigit(_ch))
+                {
+                    var number = ReadNumber();
+                    return new Token(TokenType.INT, number);
+                }
+                else
+                {
+                    token = new Token(TokenType.ILLEGAL, _ch);
+                }
+                break;
         };
 
         ReadChar();
         return token;
     }
 
-    private Token CheckForIdentifierOrKeyword()
+    private char PeekChar()
     {
-        if (IsLetter(_ch))
+        if (_readPosition >= _input.Length)
         {
-            var identifier = ReadIdentifier();
-            _position--;
-            _readPosition--;
-            return new Token(Token.LookupIdent(identifier), identifier);
-        }
-        else if (IsDigit(_ch))
-        {
-            var number = ReadNumber();
-            _position--;
-            _readPosition--;
-            return new Token(TokenType.INT, number);
+            return (char)0;
         }
         else
         {
-            return new Token(TokenType.ILLEGAL, _ch);
+            return _input[_readPosition];
         }
     }
 

@@ -90,4 +90,102 @@ let result = add(five, ten);
             token.Literal.Should().Be(expectedToken.Literal);
         }
     }
+
+    [Fact]
+    public void It_should_parse_more_monkey_code()
+    {
+        var input = @"!-/*5
+        5 < 10 > 5";
+
+        var lexer = new Lexer(input);
+        var expectedTokens = new List<Token>
+        {
+            new(TokenType.BANG, "!"),
+            new(TokenType.MINUS, "-"),
+            new(TokenType.SLASH, "/"),
+            new(TokenType.ASTERISK, "*"),
+            new(TokenType.INT, "5"),
+            new(TokenType.INT, "5"),
+            new(TokenType.LT, "<"),
+            new(TokenType.INT, "10"),
+            new(TokenType.GT, ">"),
+            new(TokenType.INT, "5"),
+            new(TokenType.EOF, (char)0)
+        };
+
+        foreach (var expectedToken in expectedTokens)
+        {
+            var token = lexer.NextToken();
+            token.Type.Should().Be(expectedToken.Type);
+            token.Literal.Should().Be(expectedToken.Literal);
+        }
+    }
+
+    [Fact]
+    public void It_should_parse_more_monkey_keywords()
+    {
+        var input = @"if (5 < 10) {
+            return true;
+        } else {
+            return false;
+        }";
+
+        var lexer = new Lexer(input);
+        var expectedTokens = new List<Token>
+        {
+            new(TokenType.IF, "if"),
+            new(TokenType.LPAREN, "("),
+            new(TokenType.INT, "5"),
+            new(TokenType.LT, "<"),
+            new(TokenType.INT, "10"),
+            new(TokenType.RPAREN, ")"),
+            new(TokenType.LBRACE, "{"),
+            new(TokenType.RETURN, "return"),
+            new(TokenType.TRUE, "true"),
+            new(TokenType.SEMICOLON, ";"),
+            new(TokenType.RBRACE, "}"),
+            new(TokenType.ELSE, "else"),
+            new(TokenType.LBRACE, "{"),
+            new(TokenType.RETURN, "return"),
+            new(TokenType.FALSE, "false"),
+            new(TokenType.SEMICOLON, ";"),
+            new(TokenType.RBRACE, "}"),
+            new(TokenType.EOF, (char)0)
+        };
+
+        foreach (var expectedToken in expectedTokens)
+        {
+            var token = lexer.NextToken();
+            token.Type.Should().Be(expectedToken.Type);
+            token.Literal.Should().Be(expectedToken.Literal);
+        }
+    }
+
+    [Fact]
+    public void It_should_parse_2_character_tokens()
+    {
+        var input = @"10 == 10;
+        10 != 9;";
+
+        var lexer = new Lexer(input);
+        var expectedTokens = new List<Token>
+        {
+            new(TokenType.INT, "10"),
+            new(TokenType.EQ, "=="),
+            new(TokenType.INT, "10"),
+            new(TokenType.SEMICOLON, ";"),
+            new(TokenType.INT, "10"),
+            new(TokenType.NOT_EQ, "!="),
+            new(TokenType.INT, "9"),
+            new(TokenType.SEMICOLON, ";"),
+            new(TokenType.EOF, (char)0)
+        };
+
+        foreach (var expectedToken in expectedTokens)
+        {
+            var token = lexer.NextToken();
+            token.Type.Should().Be(expectedToken.Type);
+            token.Literal.Should().Be(expectedToken.Literal);
+        }
+    }
 }

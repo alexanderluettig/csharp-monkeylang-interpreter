@@ -21,8 +21,15 @@ public readonly struct Token
     {
         "fn" => TokenType.FUNCTION,
         "let" => TokenType.LET,
+        "if" => TokenType.IF,
+        "else" => TokenType.ELSE,
+        "return" => TokenType.RETURN,
+        "true" => TokenType.TRUE,
+        "false" => TokenType.FALSE,
         _ => TokenType.IDENT
     };
+
+    public override string ToString() => $"Type: {Type}, Literal: {Literal}";
 }
 
 public enum TokenType
@@ -37,6 +44,14 @@ public enum TokenType
     // Operators
     ASSIGN, // "="
     PLUS, // "+"
+    MINUS, // "-"
+    BANG, // "!"
+    ASTERISK, // "*"
+    SLASH, // "/"
+    LT, // "<"
+    GT, // ">"
+    EQ, // "=="
+    NOT_EQ, // "!="
 
     // Delimiters
     COMMA, // ","
@@ -50,4 +65,9 @@ public enum TokenType
     // Keywords
     FUNCTION, // "FUNCTION"
     LET, // "LET"
+    IF, // "IF"
+    ELSE, // "ELSE"
+    RETURN, // "RETURN"
+    TRUE, // "TRUE"
+    FALSE, // "FALSE"
 }
