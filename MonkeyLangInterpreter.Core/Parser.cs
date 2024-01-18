@@ -1,14 +1,17 @@
-﻿using MonkeyLangInterpreter.Core.Interfaces;
+﻿using MonkeyLangInterpreter.Core.Enums;
+using MonkeyLangInterpreter.Core.Interfaces;
 using MonkeyLangInterpreter.Core.Nodes;
 
 namespace MonkeyLangInterpreter.Core;
 
 public class Parser
 {
+    public List<string> Errors { get; internal set; } = [];
     private Lexer Lexer { get; init; }
     private Token _currentToken;
     private Token _peekToken;
-    public List<string> Errors { get; internal set; } = [];
+    private readonly Dictionary<TokenType, Func<IExpression>> _prefixParseFns = [];
+    private readonly Dictionary<TokenType, Func<IExpression, IExpression>> _infixParseFns = [];
 
     public Parser(Lexer lexer)
     {
@@ -16,6 +19,11 @@ public class Parser
 
         NextToken();
         NextToken();
+
+        RegisterPrefix(TokenType.IDENT, () => new Identifier(_currentToken.Literal));
+        RegisterPrefix(TokenType.INT, ParseIntegerLiteral);
+        RegisterPrefix(TokenType.BANG, ParsePrefixExpression);
+        RegisterPrefix(TokenType.MINUS, ParsePrefixExpression);
     }
 
     public void NextToken()
@@ -47,8 +55,47 @@ public class Parser
         return _currentToken.Type switch
         {
             TokenType.LET => ParseLetStatement(),
-            _ => null!,
+            TokenType.RETURN => ParseReturnStatement(),
+            _ => ParseExpressionStatement(),
         };
+    }
+
+    private ExpressionStatement ParseExpressionStatement()
+    {
+        var stmt = new ExpressionStatement(_currentToken, ParseExpression(Precedence.LOWEST));
+
+        if (PeekTokenIs(TokenType.SEMICOLON))
+        {
+            NextToken();
+        }
+
+        return stmt;
+    }
+
+    private IExpression ParseExpression(Precedence precedence)
+    {
+        _prefixParseFns.TryGetValue(_currentToken.Type, out var prefix);
+        if (prefix == null)
+        {
+            Errors.Add($"no prefix parse function for {_currentToken.Type} found");
+            return null!;
+        }
+
+        var leftExp = prefix();
+        return leftExp;
+    }
+
+    private ReturnStatement ParseReturnStatement()
+    {
+        NextToken();
+
+        //TODO: We're skipping the expressions until we encounter a semicolon
+        while (!CurrentTokenIs(TokenType.SEMICOLON))
+        {
+            NextToken();
+        }
+
+        return new ReturnStatement(null!);
     }
 
     private LetStatement ParseLetStatement()
@@ -67,14 +114,44 @@ public class Parser
         }
 
         //TODO: We're skipping the expressions until we encounter a semicolon
-
-
-        while (CurrentTokenIs(TokenType.SEMICOLON))
+        while (!CurrentTokenIs(TokenType.SEMICOLON))
         {
             NextToken();
         }
 
         return new LetStatement(name, null!);
+    }
+
+    private IntegerLiteral ParseIntegerLiteral()
+    {
+        var lit = new IntegerLiteral(_currentToken);
+
+        if (!int.TryParse(_currentToken.Literal, out var _))
+        {
+            Errors.Add($"could not parse {_currentToken.Literal} as integer");
+            return null!;
+        }
+
+        return lit;
+    }
+
+    private IExpression ParsePrefixExpression()
+    {
+        var currentToken = _currentToken;
+        NextToken();
+        var expression = ParseExpression(Precedence.PREFIX);
+
+        return new PrefixExpression(currentToken, currentToken.Literal, expression);
+    }
+
+    private void RegisterPrefix(TokenType type, Func<IExpression> fn)
+    {
+        _prefixParseFns[type] = fn;
+    }
+
+    private void RegisterInfix(TokenType type, Func<IExpression, IExpression> fn)
+    {
+        _infixParseFns[type] = fn;
     }
 
     private bool CurrentTokenIs(TokenType type)

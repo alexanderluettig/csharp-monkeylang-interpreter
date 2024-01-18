@@ -2,14 +2,14 @@
 
 namespace MonkeyLangInterpreter.Core.Nodes;
 
-public class Identifier(string value) : IExpression
+public class IntegerLiteral(Token token) : IExpression
 {
-    public Token Token { get; } = new Token(TokenType.IDENT, value);
-    public string Value { get; set; } = value;
+    public Token Token { get; init; } = token;
+    public int Value => int.Parse(Token.Literal);
 
     public string String()
     {
-        return Value;
+        return Value.ToString();
     }
 
     public string TokenLiteral()

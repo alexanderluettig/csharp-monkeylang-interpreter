@@ -5,6 +5,12 @@ namespace MonkeyLangInterpreter.Core.Nodes;
 public class Program : INode
 {
     public List<IStatement> Statements { get; set; } = [];
+
+    public string String()
+    {
+        return string.Join("\n", Statements.Select(s => s.String()));
+    }
+
     public string TokenLiteral()
     {
         if (Statements.Count > 0)
