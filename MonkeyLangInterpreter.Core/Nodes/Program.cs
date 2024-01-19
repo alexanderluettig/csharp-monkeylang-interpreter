@@ -8,7 +8,7 @@ public class Program : INode
 
     public string String()
     {
-        return string.Join("\n", Statements.Select(s => s.String()));
+        return string.Join("", Statements.Select(s => s.String()));
     }
 
     public string TokenLiteral()

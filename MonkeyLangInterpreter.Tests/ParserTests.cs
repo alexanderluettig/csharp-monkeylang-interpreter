@@ -135,6 +135,63 @@ return 993322;
         TestIntegerLiteral(prefixExpression.Right, value);
     }
 
+    [Theory]
+    [InlineData("5 + 5;", 5, "+", 5)]
+    [InlineData("5 - 5;", 5, "-", 5)]
+    [InlineData("5 * 5;", 5, "*", 5)]
+    [InlineData("5 / 5;", 5, "/", 5)]
+    [InlineData("5 > 5;", 5, ">", 5)]
+    [InlineData("5 < 5;", 5, "<", 5)]
+    [InlineData("5 == 5;", 5, "==", 5)]
+    [InlineData("5 != 5;", 5, "!=", 5)]
+    public void TestParsingInfixExpressions(string input, int leftValue, string @operator, int rightValue)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<InfixExpression>();
+
+        var infixExpression = (InfixExpression)expressionStatement.Expression;
+        TestIntegerLiteral(infixExpression.Left, leftValue);
+        infixExpression.Operator.Should().Be(@operator);
+        TestIntegerLiteral(infixExpression.Right, rightValue);
+    }
+
+    [Theory]
+    [InlineData("-a * b", "((-a) * b)")]
+    [InlineData("!-a", "(!(-a))")]
+    [InlineData("a + b + c", "((a + b) + c)")]
+    [InlineData("a + b - c", "((a + b) - c)")]
+    [InlineData("a * b * c", "((a * b) * c)")]
+    [InlineData("a * b / c", "((a * b) / c)")]
+    [InlineData("a + b / c", "(a + (b / c))")]
+    [InlineData("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)")]
+    [InlineData("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)")]
+    [InlineData("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))")]
+    [InlineData("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))")]
+    [InlineData("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))")]
+    public void TestOperatorPrecedenceParsing(string input, string expected)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+
+        program.Should().NotBeNull();
+        program.String().Should().Be(expected);
+    }
+
     private static void TestIntegerLiteral(IExpression expression, int value)
     {
         expression.Should().BeOfType<IntegerLiteral>();
@@ -153,5 +210,4 @@ return 993322;
         letStatement.Name.Value.Should().Be(name);
         letStatement.Name.TokenLiteral().Should().Be(name);
     }
-
 }
