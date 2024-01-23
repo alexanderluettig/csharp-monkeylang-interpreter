@@ -160,11 +160,7 @@ return 993322;
 
         var expressionStatement = (ExpressionStatement)statement;
         expressionStatement.Expression.Should().BeOfType<InfixExpression>();
-
-        var infixExpression = (InfixExpression)expressionStatement.Expression;
-        TestIntegerLiteral(infixExpression.Left, leftValue);
-        infixExpression.Operator.Should().Be(@operator);
-        TestIntegerLiteral(infixExpression.Right, rightValue);
+        TestInfixExpression(expressionStatement.Expression, leftValue, @operator, rightValue);
     }
 
     [Theory]
@@ -190,6 +186,41 @@ return 993322;
 
         program.Should().NotBeNull();
         program.String().Should().Be(expected);
+    }
+
+    private static void TestIdentifier(IExpression expression, string value)
+    {
+        expression.Should().BeOfType<Identifier>();
+
+        var identifier = (Identifier)expression;
+        identifier.Value.Should().Be(value);
+        identifier.TokenLiteral().Should().Be(value);
+    }
+
+    private static void TestLiteralExpression(IExpression expression, object expected)
+    {
+        var type = Type.GetTypeCode(expected.GetType());
+        switch (type)
+        {
+            case TypeCode.Int32:
+                TestIntegerLiteral(expression, (int)expected);
+                break;
+            case TypeCode.String:
+                TestIdentifier(expression, (string)expected);
+                break;
+            default:
+                throw new Exception($"type of expression not handled. got={type}");
+        }
+    }
+
+    private static void TestInfixExpression(IExpression expression, object left, string @operator, object right)
+    {
+        expression.Should().BeOfType<InfixExpression>();
+
+        var infixExpression = (InfixExpression)expression;
+        TestLiteralExpression(infixExpression.Left, left);
+        infixExpression.Operator.Should().Be(@operator);
+        TestLiteralExpression(infixExpression.Right, right);
     }
 
     private static void TestIntegerLiteral(IExpression expression, int value)
