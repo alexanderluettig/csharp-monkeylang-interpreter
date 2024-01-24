@@ -33,6 +33,8 @@ public class Parser
 
         RegisterPrefix(TokenType.IDENT, () => new Identifier(_currentToken.Literal));
         RegisterPrefix(TokenType.INT, ParseIntegerLiteral);
+        RegisterPrefix(TokenType.TRUE, ParseBooleanExpression);
+        RegisterPrefix(TokenType.FALSE, ParseBooleanExpression);
         RegisterPrefix(TokenType.BANG, ParsePrefixExpression);
         RegisterPrefix(TokenType.MINUS, ParsePrefixExpression);
 
@@ -167,6 +169,11 @@ public class Parser
         }
 
         return lit;
+    }
+
+    private BooleanExpression ParseBooleanExpression()
+    {
+        return new BooleanExpression(_currentToken, CurrentTokenIs(TokenType.TRUE));
     }
 
     private IExpression ParsePrefixExpression()

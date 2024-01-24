@@ -144,7 +144,10 @@ return 993322;
     [InlineData("5 < 5;", 5, "<", 5)]
     [InlineData("5 == 5;", 5, "==", 5)]
     [InlineData("5 != 5;", 5, "!=", 5)]
-    public void TestParsingInfixExpressions(string input, int leftValue, string @operator, int rightValue)
+    [InlineData("true == true", true, "==", true)]
+    [InlineData("true != false", true, "!=", false)]
+    [InlineData("false == false", false, "==", false)]
+    public void TestParsingInfixExpressions(string input, object leftValue, string @operator, object rightValue)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
@@ -176,6 +179,10 @@ return 993322;
     [InlineData("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))")]
     [InlineData("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))")]
     [InlineData("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))")]
+    [InlineData("true", "true")]
+    [InlineData("false", "false")]
+    [InlineData("3 > 5 == false", "((3 > 5) == false)")]
+    [InlineData("3 < 5 == true", "((3 < 5) == true)")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -186,6 +193,31 @@ return 993322;
 
         program.Should().NotBeNull();
         program.String().Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("true;", true)]
+    [InlineData("false;", false)]
+    public void TestBooleanExpressions(string input, bool expected)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<BooleanExpression>();
+
+        var boolean = (BooleanExpression)expressionStatement.Expression;
+        boolean.Value.Should().Be(expected);
+        boolean.TokenLiteral().Should().Be(expected.ToString().ToLower());
     }
 
     private static void TestIdentifier(IExpression expression, string value)
@@ -208,9 +240,21 @@ return 993322;
             case TypeCode.String:
                 TestIdentifier(expression, (string)expected);
                 break;
+            case TypeCode.Boolean:
+                TestBooleanExpression(expression, (bool)expected);
+                break;
             default:
                 throw new Exception($"type of expression not handled. got={type}");
         }
+    }
+
+    private static void TestBooleanExpression(IExpression expression, bool value)
+    {
+        expression.Should().BeOfType<BooleanExpression>();
+
+        var boolean = (BooleanExpression)expression;
+        boolean.Value.Should().Be(value);
+        boolean.TokenLiteral().Should().Be(value.ToString().ToLower());
     }
 
     private static void TestInfixExpression(IExpression expression, object left, string @operator, object right)
