@@ -35,6 +35,9 @@ public class Parser
         RegisterPrefix(TokenType.INT, ParseIntegerLiteral);
         RegisterPrefix(TokenType.TRUE, ParseBooleanExpression);
         RegisterPrefix(TokenType.FALSE, ParseBooleanExpression);
+        RegisterPrefix(TokenType.LPAREN, ParseGroupedExpression);
+        RegisterPrefix(TokenType.IF, ParseIfExpression);
+        RegisterPrefix(TokenType.FUNCTION, ParseFunctionLiteral);
         RegisterPrefix(TokenType.BANG, ParsePrefixExpression);
         RegisterPrefix(TokenType.MINUS, ParsePrefixExpression);
 
@@ -156,6 +159,130 @@ public class Parser
         }
 
         return new LetStatement(name, null!);
+    }
+
+    private FunctionLiteral ParseFunctionLiteral()
+    {
+        if (!ExpectPeek(TokenType.LPAREN))
+        {
+            return null!;
+        }
+
+        var parameters = ParseFunctionParameters();
+
+        if (!ExpectPeek(TokenType.LBRACE))
+        {
+            return null!;
+        }
+
+        var body = ParseBlockStatement();
+
+        return new FunctionLiteral(parameters, body);
+    }
+
+    private List<Identifier> ParseFunctionParameters()
+    {
+        List<Identifier> identifiers = [];
+
+        if (PeekTokenIs(TokenType.RPAREN))
+        {
+            NextToken();
+            return identifiers;
+        }
+
+        NextToken();
+
+        var ident = new Identifier(_currentToken.Literal);
+        identifiers.Add(ident);
+
+        while (PeekTokenIs(TokenType.COMMA))
+        {
+            NextToken();
+            NextToken();
+            ident = new Identifier(_currentToken.Literal);
+            identifiers.Add(ident);
+        }
+
+        if (!ExpectPeek(TokenType.RPAREN))
+        {
+            return null!;
+        }
+
+        return identifiers;
+    }
+
+    private IExpression ParseGroupedExpression()
+    {
+        NextToken();
+
+        var exp = ParseExpression(Precedence.LOWEST);
+
+        if (!ExpectPeek(TokenType.RPAREN))
+        {
+            return null!;
+        }
+
+        return exp;
+    }
+
+    private IExpression ParseIfExpression()
+    {
+        var token = _currentToken;
+
+        if (!ExpectPeek(TokenType.LPAREN))
+        {
+            return null!;
+        }
+
+        NextToken();
+        var condition = ParseExpression(Precedence.LOWEST);
+
+        if (!ExpectPeek(TokenType.RPAREN))
+        {
+            return null!;
+        }
+
+        if (!ExpectPeek(TokenType.LBRACE))
+        {
+            return null!;
+        }
+
+        var consequence = ParseBlockStatement();
+
+        BlockStatement? alternative = null;
+        if (PeekTokenIs(TokenType.ELSE))
+        {
+            NextToken();
+
+            if (!ExpectPeek(TokenType.LBRACE))
+            {
+                return null!;
+            }
+
+            alternative = ParseBlockStatement();
+        }
+
+        return new IfExpression(token, condition, consequence, alternative!);
+    }
+
+    private BlockStatement ParseBlockStatement()
+    {
+        List<IStatement> statements = [];
+
+        NextToken();
+
+        while (!CurrentTokenIs(TokenType.RBRACE) && !CurrentTokenIs(TokenType.EOF))
+        {
+            var stmt = ParseStatement();
+            if (stmt != null)
+            {
+                statements.Add(stmt);
+            }
+
+            NextToken();
+        }
+
+        return new BlockStatement(statements);
     }
 
     private IntegerLiteral ParseIntegerLiteral()

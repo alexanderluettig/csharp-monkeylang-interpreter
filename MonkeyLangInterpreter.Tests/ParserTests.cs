@@ -183,6 +183,11 @@ return 993322;
     [InlineData("false", "false")]
     [InlineData("3 > 5 == false", "((3 > 5) == false)")]
     [InlineData("3 < 5 == true", "((3 < 5) == true)")]
+    [InlineData("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)")]
+    [InlineData("(5 + 5) * 2", "((5 + 5) * 2)")]
+    [InlineData("2 / (5 + 5)", "(2 / (5 + 5))")]
+    [InlineData("-(5 + 5)", "(-(5 + 5))")]
+    [InlineData("!(true == true)", "(!(true == true))")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -218,6 +223,139 @@ return 993322;
         var boolean = (BooleanExpression)expressionStatement.Expression;
         boolean.Value.Should().Be(expected);
         boolean.TokenLiteral().Should().Be(expected.ToString().ToLower());
+    }
+
+    [Fact]
+    public void TestIfExpression()
+    {
+        var input = "if (x < y) { x }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<IfExpression>();
+
+        var ifExpression = (IfExpression)expressionStatement.Expression;
+        TestInfixExpression(ifExpression.Condition, "x", "<", "y");
+        ifExpression.Consequence.Statements.Should().HaveCount(1);
+
+        var consequence = ifExpression.Consequence.Statements[0];
+        consequence.Should().BeOfType<ExpressionStatement>();
+
+        var consequenceExpressionStatement = (ExpressionStatement)consequence;
+        TestIdentifier(consequenceExpressionStatement.Expression, "x");
+
+        ifExpression.Alternative.Should().BeNull();
+    }
+
+    [Fact]
+    public void TestIfElseExpression()
+    {
+        var input = "if (x < y) { x } else { y }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<IfExpression>();
+
+        var ifExpression = (IfExpression)expressionStatement.Expression;
+        TestInfixExpression(ifExpression.Condition, "x", "<", "y");
+        ifExpression.Consequence.Statements.Should().HaveCount(1);
+
+        var consequence = ifExpression.Consequence.Statements[0];
+        consequence.Should().BeOfType<ExpressionStatement>();
+
+        var consequenceExpressionStatement = (ExpressionStatement)consequence;
+        TestIdentifier(consequenceExpressionStatement.Expression, "x");
+
+        ifExpression.Alternative.Statements.Should().HaveCount(1);
+
+        var alternative = ifExpression.Alternative.Statements[0];
+        alternative.Should().BeOfType<ExpressionStatement>();
+
+        var alternativeExpressionStatement = (ExpressionStatement)alternative;
+        TestIdentifier(alternativeExpressionStatement.Expression, "y");
+    }
+
+    [Fact]
+    public void TestFunctionLiteralParsing()
+    {
+        var input = "fn(x, y) { x + y; }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<FunctionLiteral>();
+
+        var function = (FunctionLiteral)expressionStatement.Expression;
+        function.Parameters.Should().HaveCount(2);
+
+        TestLiteralExpression(function.Parameters[0], "x");
+        TestLiteralExpression(function.Parameters[1], "y");
+
+        function.Body.Statements.Should().HaveCount(1);
+
+        var bodyStatement = function.Body.Statements[0];
+        bodyStatement.Should().BeOfType<ExpressionStatement>();
+
+        var bodyExpressionStatement = (ExpressionStatement)bodyStatement;
+        TestInfixExpression(bodyExpressionStatement.Expression, "x", "+", "y");
+    }
+
+    [Theory]
+    [InlineData("fn() {};", new string[0])]
+    [InlineData("fn(x) {};", new[] { "x" })]
+    [InlineData("fn(x, y, z) {};", new[] { "x", "y", "z" })]
+    public void TestFunctionParameterParsing(string input, string[] expectedParams)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<FunctionLiteral>();
+
+        var function = (FunctionLiteral)expressionStatement.Expression;
+        function.Parameters.Should().HaveCount(expectedParams.Length);
+
+        for (var i = 0; i < expectedParams.Length; i++)
+        {
+            TestLiteralExpression(function.Parameters[i], expectedParams[i]);
+        }
     }
 
     private static void TestIdentifier(IExpression expression, string value)
