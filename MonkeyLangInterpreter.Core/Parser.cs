@@ -49,6 +49,7 @@ public class Parser
         RegisterInfix(TokenType.NOT_EQ, ParseInfixExpression);
         RegisterInfix(TokenType.LT, ParseInfixExpression);
         RegisterInfix(TokenType.GT, ParseInfixExpression);
+        RegisterInfix(TokenType.LPAREN, ParseCallExpression);
     }
 
     public void NextToken()
@@ -159,6 +160,39 @@ public class Parser
         }
 
         return new LetStatement(name, null!);
+    }
+
+    private CallExpression ParseCallExpression(IExpression function)
+    {
+        return new CallExpression(function, ParseCallArguments());
+    }
+
+    private List<IExpression> ParseCallArguments()
+    {
+        List<IExpression> arguments = [];
+
+        if (PeekTokenIs(TokenType.RPAREN))
+        {
+            NextToken();
+            return arguments;
+        }
+
+        NextToken();
+        arguments.Add(ParseExpression(Precedence.LOWEST));
+
+        while (PeekTokenIs(TokenType.COMMA))
+        {
+            NextToken();
+            NextToken();
+            arguments.Add(ParseExpression(Precedence.LOWEST));
+        }
+
+        if (!ExpectPeek(TokenType.RPAREN))
+        {
+            return null!;
+        }
+
+        return arguments;
     }
 
     private FunctionLiteral ParseFunctionLiteral()
