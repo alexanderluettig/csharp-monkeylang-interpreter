@@ -10,18 +10,23 @@ public class REPL
         {
             Console.Write(PROMPT);
             var input = Console.ReadLine();
-            var lexer = new Lexer(input!);
 
-            while (true)
+            if (string.IsNullOrEmpty(input))
             {
-                var token = lexer.NextToken();
-                if (token.Type == TokenType.EOF)
-                {
-                    break;
-                }
-
-                Console.WriteLine(token);
+                continue;
             }
+
+            var lexer = new Lexer(input!);
+            var parser = new Parser(lexer);
+            var program = parser.ParseProgram();
+
+            if (parser.Errors.Count != 0)
+            {
+                parser.Errors.ForEach(Console.WriteLine);
+                continue;
+            }
+
+            Console.WriteLine(program.String());
         }
     }
 
