@@ -129,13 +129,14 @@ public class Parser
     {
         NextToken();
 
-        //TODO: We're skipping the expressions until we encounter a semicolon
-        while (!CurrentTokenIs(TokenType.SEMICOLON))
+        var returnValue = ParseExpression(Precedence.LOWEST);
+
+        if (PeekTokenIs(TokenType.SEMICOLON))
         {
             NextToken();
         }
 
-        return new ReturnStatement(null!);
+        return new ReturnStatement(returnValue);
     }
 
     private LetStatement ParseLetStatement()
@@ -153,13 +154,15 @@ public class Parser
             return null!;
         }
 
-        //TODO: We're skipping the expressions until we encounter a semicolon
-        while (!CurrentTokenIs(TokenType.SEMICOLON))
+        NextToken();
+        var value = ParseExpression(Precedence.LOWEST);
+
+        if (PeekTokenIs(TokenType.SEMICOLON))
         {
             NextToken();
         }
 
-        return new LetStatement(name, null!);
+        return new LetStatement(name, value);
     }
 
     private CallExpression ParseCallExpression(IExpression function)

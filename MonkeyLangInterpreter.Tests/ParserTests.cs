@@ -6,15 +6,12 @@ namespace MonkeyLangInterpreter.Tests;
 
 public class ParserTests
 {
-    [Fact]
-    public void TestLetStatements()
+    [Theory]
+    [InlineData("let x = 5;", "x", 5)]
+    [InlineData("let y = true;", "y", true)]
+    [InlineData("let foobar = y;", "foobar", "y")]
+    public void TestLetStatements(string input, string identifier, object expectedValue)
     {
-        var input = @"
-let x = 5;
-let y = 10;
-let foobar = 838383;
-";
-
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
 
@@ -22,28 +19,21 @@ let foobar = 838383;
         parser.Errors.Should().BeEmpty();
 
         program.Should().NotBeNull();
-        program.Statements.Should().HaveCount(3);
+        program.Statements.Should().HaveCount(1);
 
-        string[] tests = ["x", "y", "foobar"];
+        var statement = program.Statements[0];
+        TestLetStatement(statement, identifier);
 
-        for (var i = 0; i < tests.Length; i++)
-        {
-            var statement = program.Statements[i];
-            var expectedIdentifier = tests[i];
-
-            TestLetStatement(statement, expectedIdentifier);
-        }
+        var letStatement = (LetStatement)statement;
+        TestLiteralExpression(letStatement.Value, expectedValue);
     }
 
-    [Fact]
-    public void TestReturnStatements()
+    [Theory]
+    [InlineData("return 5;", 5)]
+    [InlineData("return true;", true)]
+    [InlineData("return foobar;", "foobar")]
+    public void TestReturnStatements(string input, object expected)
     {
-        var input = @"
-return 5;
-return 10;
-return 993322;
-";
-
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
 
@@ -51,13 +41,14 @@ return 993322;
         parser.Errors.Should().BeEmpty();
 
         program.Should().NotBeNull();
-        program.Statements.Should().HaveCount(3);
+        program.Statements.Should().HaveCount(1);
 
-        foreach (var statement in program.Statements)
-        {
-            statement.Should().BeOfType<ReturnStatement>();
-            statement.TokenLiteral().Should().Be("return");
-        }
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ReturnStatement>();
+        statement.TokenLiteral().Should().Be("return");
+
+        var returnStatement = (ReturnStatement)statement;
+        TestLiteralExpression(returnStatement.ReturnValue, expected);
     }
 
     [Fact]
