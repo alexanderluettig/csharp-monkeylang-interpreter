@@ -25,8 +25,6 @@ Following the book [Writing an Interpreter in Go](https://interpreterbook.com/) 
 - Internal Object System
 - Evaluator
 
-## Things I learned
-
 ## Possible Improvements
 
 - [ ] Add Support for floating point numbers or decimals
