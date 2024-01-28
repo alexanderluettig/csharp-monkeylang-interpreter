@@ -26,7 +26,11 @@ public class REPL
                 continue;
             }
 
-            Console.WriteLine(program.String());
+            var evaluated = Evaluator.Eval(program);
+            if (evaluated != null)
+            {
+                Console.WriteLine(evaluated.Inspect());
+            }
         }
     }
 
