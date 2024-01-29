@@ -10,6 +10,6 @@ public class BooleanObject(bool value) : IObject
 
     public ObjectType Type()
     {
-        return ObjectType.Boolean;
+        return ObjectType.BOOLEAN;
     }
 }

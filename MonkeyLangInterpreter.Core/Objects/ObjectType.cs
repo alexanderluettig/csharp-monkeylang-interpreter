@@ -2,8 +2,9 @@ namespace MonkeyLangInterpreter.Core.Objects;
 
 public enum ObjectType
 {
-    Integer,
-    Boolean,
-    Null,
+    INTEGER,
+    BOOLEAN,
+    NULL,
     RETURN_VALUE,
+    ERROR,
 }

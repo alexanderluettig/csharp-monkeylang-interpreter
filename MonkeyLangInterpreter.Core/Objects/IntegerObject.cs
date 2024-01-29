@@ -10,6 +10,6 @@ public class IntegerObject(int value) : IObject
 
     public ObjectType Type()
     {
-        return ObjectType.Integer;
+        return ObjectType.INTEGER;
     }
 }

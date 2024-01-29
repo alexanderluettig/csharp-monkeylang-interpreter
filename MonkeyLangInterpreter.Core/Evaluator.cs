@@ -17,15 +17,31 @@ public class Evaluator
                 return EvalProgram(program);
             case PrefixExpression prefixExpression:
                 var expression = Eval(prefixExpression.Right);
+                if (IsError(expression))
+                {
+                    return expression;
+                }
                 return EvalPrefixExpression(prefixExpression.Operator, expression);
             case InfixExpression infixExpression:
                 var leftSide = Eval(infixExpression.Left);
+                if (IsError(leftSide))
+                {
+                    return leftSide;
+                }
                 var rightSide = Eval(infixExpression.Right);
+                if (IsError(rightSide))
+                {
+                    return rightSide;
+                }
                 return EvalInfixExpression(infixExpression.Operator, leftSide, rightSide);
             case BlockStatement blockStatement:
                 return EvalBlockStatements(blockStatement);
             case ReturnStatement returnStatement:
                 var value = Eval(returnStatement.ReturnValue);
+                if (IsError(value))
+                {
+                    return value;
+                }
                 return new ReturnValue(value);
             case IfExpression ifExpression:
                 return EvalIfExpression(ifExpression);
@@ -48,9 +64,12 @@ public class Evaluator
         {
             result = Eval(statement);
 
-            if (result is ReturnValue returnValue)
+            switch (result)
             {
-                return returnValue.Value;
+                case ReturnValue returnValue:
+                    return returnValue.Value;
+                case ErrorObject error:
+                    return error;
             }
         }
 
@@ -65,7 +84,7 @@ public class Evaluator
         {
             result = Eval(statement);
 
-            if (result is not NullObject && result.Type() == ObjectType.RETURN_VALUE)
+            if (result is not NullObject && (result.Type() == ObjectType.RETURN_VALUE || result.Type() == ObjectType.ERROR))
             {
                 return result;
             }
@@ -77,6 +96,11 @@ public class Evaluator
     private static IObject EvalIfExpression(IfExpression ifExpression)
     {
         var condition = Eval(ifExpression.Condition);
+
+        if (IsError(condition))
+        {
+            return condition;
+        }
 
         if (IsTruthy(condition))
         {
@@ -106,7 +130,7 @@ public class Evaluator
                 ">" => leftInteger.Value > rightInteger.Value ? TRUE : FALSE,
                 "==" => leftInteger.Value == rightInteger.Value ? TRUE : FALSE,
                 "!=" => leftInteger.Value != rightInteger.Value ? TRUE : FALSE,
-                _ => NULL
+                _ => new ErrorObject($"unknown operator: {left.Type()} {@operator} {right.Type()}")
             };
         }
 
@@ -116,16 +140,16 @@ public class Evaluator
             {
                 "==" => leftBoolean.Value == rightBoolean.Value ? TRUE : FALSE,
                 "!=" => leftBoolean.Value != rightBoolean.Value ? TRUE : FALSE,
-                _ => NULL
+                _ => new ErrorObject($"unknown operator: {left.Type()} {@operator} {right.Type()}")
             };
         }
 
-        return @operator switch
+        if (left.Type() != right.Type())
         {
-            "==" => left == right ? TRUE : FALSE,
-            "!=" => left != right ? TRUE : FALSE,
-            _ => NULL
-        };
+            return new ErrorObject($"type mismatch: {left.Type()} {@operator} {right.Type()}");
+        }
+
+        return new ErrorObject($"unknown operator: {left.Type()} {@operator} {right.Type()}");
     }
 
     private static IObject EvalPrefixExpression(string @operator, IObject right)
@@ -134,7 +158,7 @@ public class Evaluator
         {
             "!" => EvalBangOperatorExpression(right),
             "-" => EvalMinusPrefixOperatorExpression(right),
-            _ => NULL
+            _ => new ErrorObject($"unknown operator: {@operator}{right.Type()}")
         };
     }
 
@@ -152,7 +176,7 @@ public class Evaluator
     {
         if (right is not IntegerObject integer)
         {
-            return NULL;
+            return new ErrorObject($"unknown operator: -{right.Type()}");
         }
 
         return new IntegerObject(-integer.Value);
@@ -166,5 +190,10 @@ public class Evaluator
             NullObject => false,
             _ => true
         };
+    }
+
+    private static bool IsError(IObject obj)
+    {
+        return obj.Type() == ObjectType.ERROR;
     }
 }

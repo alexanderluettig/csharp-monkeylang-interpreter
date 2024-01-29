@@ -9,6 +9,6 @@ public class NullObject : IObject
 
     public ObjectType Type()
     {
-        return ObjectType.Null;
+        return ObjectType.NULL;
     }
 }
