@@ -1,8 +1,11 @@
-﻿namespace MonkeyLangInterpreter.Core;
+﻿using MonkeyLangInterpreter.Core.Objects;
+
+namespace MonkeyLangInterpreter.Core;
 
 public class REPL
 {
     private const string PROMPT = ">> ";
+    private static readonly VariableEnvironment _environment = new();
 
     public static void Start()
     {
@@ -26,7 +29,7 @@ public class REPL
                 continue;
             }
 
-            var evaluated = Evaluator.Eval(program);
+            var evaluated = Evaluator.Eval(program, _environment);
             if (evaluated != null)
             {
                 Console.WriteLine(evaluated.Inspect());

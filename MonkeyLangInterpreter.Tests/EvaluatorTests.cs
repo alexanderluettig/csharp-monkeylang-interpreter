@@ -107,6 +107,7 @@ public class EvaluatorTests
     [InlineData("5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN")]
     [InlineData("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN")]
     [InlineData("if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "unknown operator: BOOLEAN + BOOLEAN")]
+    [InlineData("foobar", "identifier not found: foobar")]
     public void TestErrorHandling(string input, string expectedMessage)
     {
         var evaluated = TestEval(input);
@@ -115,13 +116,25 @@ public class EvaluatorTests
         error.Message.Should().Be(expectedMessage);
     }
 
+    [Theory]
+    [InlineData("let a = 5; a;", 5)]
+    [InlineData("let a = 5 * 5; a;", 25)]
+    [InlineData("let a = 5; let b = a; b;", 5)]
+    [InlineData("let a = 5; let b = a; let c = a + b + 5; c;", 15)]
+    public void TestLetStatements(string input, int expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var program = parser.ParseProgram();
+        var env = new VariableEnvironment();
 
-        return Evaluator.Eval(program);
+        return Evaluator.Eval(program, env);
     }
 
     private static void TestIntegerObject(IObject obj, int expected)

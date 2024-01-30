@@ -9,44 +9,54 @@ public class Evaluator
     private static readonly BooleanObject TRUE = new(true);
     private static readonly BooleanObject FALSE = new(false);
     private static readonly NullObject NULL = new();
-    public static IObject Eval(INode node)
+    public static IObject Eval(INode node, VariableEnvironment environment)
     {
         switch (node)
         {
             case Program program:
-                return EvalProgram(program);
+                return EvalProgram(program, environment);
             case PrefixExpression prefixExpression:
-                var expression = Eval(prefixExpression.Right);
+                var expression = Eval(prefixExpression.Right, environment);
                 if (IsError(expression))
                 {
                     return expression;
                 }
                 return EvalPrefixExpression(prefixExpression.Operator, expression);
             case InfixExpression infixExpression:
-                var leftSide = Eval(infixExpression.Left);
+                var leftSide = Eval(infixExpression.Left, environment);
                 if (IsError(leftSide))
                 {
                     return leftSide;
                 }
-                var rightSide = Eval(infixExpression.Right);
+                var rightSide = Eval(infixExpression.Right, environment);
                 if (IsError(rightSide))
                 {
                     return rightSide;
                 }
                 return EvalInfixExpression(infixExpression.Operator, leftSide, rightSide);
             case BlockStatement blockStatement:
-                return EvalBlockStatements(blockStatement);
+                return EvalBlockStatements(blockStatement, environment);
             case ReturnStatement returnStatement:
-                var value = Eval(returnStatement.ReturnValue);
+                var value = Eval(returnStatement.ReturnValue, environment);
                 if (IsError(value))
                 {
                     return value;
                 }
                 return new ReturnValue(value);
+            case LetStatement letStatement:
+                var evaluated = Eval(letStatement.Value, environment);
+                if (IsError(evaluated))
+                {
+                    return evaluated;
+                }
+                environment.Set(letStatement.Name.Value, evaluated);
+                return NULL;
+            case Identifier identifier:
+                return EvalIdentifier(identifier, environment);
             case IfExpression ifExpression:
-                return EvalIfExpression(ifExpression);
+                return EvalIfExpression(ifExpression, environment);
             case ExpressionStatement expressionStatement:
-                return Eval(expressionStatement.Expression);
+                return Eval(expressionStatement.Expression, environment);
             case IntegerLiteral integerLiteral:
                 return new IntegerObject(integerLiteral.Value);
             case BooleanExpression booleanExpression:
@@ -56,13 +66,18 @@ public class Evaluator
         };
     }
 
-    private static IObject EvalProgram(Program program)
+    private static IObject EvalIdentifier(Identifier identifier, VariableEnvironment environment)
+    {
+        return environment.Get(identifier.Value);
+    }
+
+    private static IObject EvalProgram(Program program, VariableEnvironment environment)
     {
         IObject result = new NullObject();
 
         foreach (var statement in program.Statements)
         {
-            result = Eval(statement);
+            result = Eval(statement, environment);
 
             switch (result)
             {
@@ -76,13 +91,13 @@ public class Evaluator
         return result;
     }
 
-    private static IObject EvalBlockStatements(BlockStatement block)
+    private static IObject EvalBlockStatements(BlockStatement block, VariableEnvironment environment)
     {
         IObject result = new NullObject();
 
         foreach (var statement in block.Statements)
         {
-            result = Eval(statement);
+            result = Eval(statement, environment);
 
             if (result is not NullObject && (result.Type() == ObjectType.RETURN_VALUE || result.Type() == ObjectType.ERROR))
             {
@@ -93,9 +108,9 @@ public class Evaluator
         return result;
     }
 
-    private static IObject EvalIfExpression(IfExpression ifExpression)
+    private static IObject EvalIfExpression(IfExpression ifExpression, VariableEnvironment environment)
     {
-        var condition = Eval(ifExpression.Condition);
+        var condition = Eval(ifExpression.Condition, environment);
 
         if (IsError(condition))
         {
@@ -104,11 +119,11 @@ public class Evaluator
 
         if (IsTruthy(condition))
         {
-            return Eval(ifExpression.Consequence);
+            return Eval(ifExpression.Consequence, environment);
         }
         else if (ifExpression.Alternative is not null)
         {
-            return Eval(ifExpression.Alternative);
+            return Eval(ifExpression.Alternative, environment);
         }
         else
         {
