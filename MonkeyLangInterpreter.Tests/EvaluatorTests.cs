@@ -127,6 +127,38 @@ public class EvaluatorTests
         TestIntegerObject(evaluated, expected);
     }
 
+    [Theory]
+    [InlineData("fn(x) { x + 2; };", "x", "(x + 2)")]
+    public void TestFunctionObject(string input, string expectedParameter, string expectedBody)
+    {
+        var evaluated = TestEval(input);
+        evaluated.Should().BeOfType<Function>();
+        var function = (Function)evaluated;
+        function.Parameters.Should().HaveCount(1);
+        function.Parameters[0].String().Should().Be(expectedParameter);
+        function.Body.String().Should().Be(expectedBody);
+    }
+
+    [Theory]
+    [InlineData("let identity = fn(x) { x; }; identity(5);", 5)]
+    [InlineData("let identity = fn(x) { return x; }; identity(5);", 5)]
+    [InlineData("let double = fn(x) { x * 2; }; double(5);", 10)]
+    [InlineData("let add = fn(x, y) { x + y; }; add(5, 5);", 10)]
+    [InlineData("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20)]
+    public void TestFunctionApplication(string input, int expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
+    [Theory]
+    [InlineData("let newAdder = fn(x) { fn(y) { x + y }; }; let addTwo = newAdder(2); addTwo(2);", 4)]
+    public void TestClosures(string input, int expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

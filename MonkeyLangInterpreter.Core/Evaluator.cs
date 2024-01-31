@@ -61,9 +61,70 @@ public class Evaluator
                 return new IntegerObject(integerLiteral.Value);
             case BooleanExpression booleanExpression:
                 return booleanExpression.Value ? TRUE : FALSE;
+            case FunctionLiteral functionLiteral:
+                return new Function(functionLiteral.Parameters, functionLiteral.Body, environment);
+            case CallExpression callExpression:
+                var function = Eval(callExpression.Function, environment);
+                if (IsError(function))
+                {
+                    return function;
+                }
+                var args = EvalExpressions(callExpression.Arguments, environment);
+                if (args.Count == 1 && IsError(args[0]))
+                {
+                    return args[0];
+                }
+                return ApplyFunction(function, args);
             default:
                 return NULL;
         };
+    }
+
+    private static IObject ApplyFunction(IObject function, List<IObject> args)
+    {
+        if (function is not Function)
+        {
+            return new ErrorObject($"not a function: {function.Type()}");
+        }
+
+        var fn = (Function)function;
+        var extendedEnvironment = ExtendFunctionEnvironment(fn, args);
+        var evaluated = Eval(fn.Body, extendedEnvironment);
+        return UnwrapReturnValue(evaluated);
+    }
+
+    private static VariableEnvironment ExtendFunctionEnvironment(Function function, List<IObject> args)
+    {
+        var environment = new VariableEnvironment(function.Environment);
+
+        for (int i = 0; i < function.Parameters.Count; i++)
+        {
+            environment.Set(function.Parameters[i].Value, args[i]);
+        }
+
+        return environment;
+    }
+
+    private static IObject UnwrapReturnValue(IObject obj)
+    {
+        return obj is ReturnValue returnValue ? returnValue.Value : obj;
+    }
+
+    private static List<IObject> EvalExpressions(List<IExpression> arguments, VariableEnvironment environment)
+    {
+        var result = new List<IObject>();
+
+        foreach (var argument in arguments)
+        {
+            var evaluated = Eval(argument, environment);
+            if (IsError(evaluated))
+            {
+                return [evaluated];
+            }
+            result.Add(evaluated);
+        }
+
+        return result;
     }
 
     private static IObject EvalIdentifier(Identifier identifier, VariableEnvironment environment)

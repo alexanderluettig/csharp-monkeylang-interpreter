@@ -1,8 +1,9 @@
 ﻿namespace MonkeyLangInterpreter.Core.Objects;
 
-public class VariableEnvironment
+public class VariableEnvironment(VariableEnvironment? outer = null)
 {
-    private readonly Dictionary<string, IObject> _store = new();
+    private readonly Dictionary<string, IObject> _store = [];
+    private readonly VariableEnvironment? _outer = outer;
 
     public IObject Get(string name)
     {
@@ -10,14 +11,16 @@ public class VariableEnvironment
         {
             return value;
         }
-        else
+        if (_outer is not null)
         {
-            return new ErrorObject($"identifier not found: {name}");
+            return _outer.Get(name);
         }
+        return new ErrorObject($"identifier not found: {name}");
     }
 
-    public void Set(string name, IObject value)
+    public IObject Set(string name, IObject value)
     {
         _store[name] = value;
+        return value;
     }
 }
