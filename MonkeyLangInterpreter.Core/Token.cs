@@ -40,6 +40,7 @@ public enum TokenType
     // Identifiers + literals
     IDENT, // add, foobar, x, y, ...
     INT, // 1337
+    STRING, // "foobar"
 
     // Operators
     ASSIGN, // "="

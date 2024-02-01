@@ -89,6 +89,10 @@ public class Lexer
             case (char)0:
                 token = new Token(TokenType.EOF, _ch);
                 break;
+            case '"':
+                var stringLiteral = ReadString();
+                token = new Token(TokenType.STRING, stringLiteral);
+                break;
             default:
                 if (IsLetter(_ch))
                 {
@@ -109,6 +113,21 @@ public class Lexer
 
         ReadChar();
         return token;
+    }
+
+    private string ReadString()
+    {
+        var position = _position + 1;
+        while (true)
+        {
+            ReadChar();
+            if (_ch == '"' || _ch == (char)0)
+            {
+                break;
+            }
+        }
+
+        return _input[position.._position];
     }
 
     private char PeekChar()

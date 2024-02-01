@@ -4,31 +4,22 @@ namespace MonkeyLangInterpreter.Tests;
 
 public class LexerTests
 {
-    [Fact]
-    public void It_should_parse_basic_tokens()
+    [Theory]
+    [InlineData(TokenType.EOF, (char)0)]
+    [InlineData(TokenType.ASSIGN, '=')]
+    [InlineData(TokenType.PLUS, '+')]
+    [InlineData(TokenType.COMMA, ',')]
+    [InlineData(TokenType.SEMICOLON, ';')]
+    [InlineData(TokenType.LPAREN, '(')]
+    [InlineData(TokenType.RPAREN, ')')]
+    [InlineData(TokenType.LBRACE, '{')]
+    [InlineData(TokenType.RBRACE, '}')]
+    public void It_should_parse_basic_tokens(TokenType type, char expectedLiteral)
     {
-        var tokens = "=+(){},;";
-        var lexer = new Lexer(tokens);
-
-        var expectedTokens = new List<Token>
-        {
-            new(TokenType.ASSIGN, '='),
-            new(TokenType.PLUS, '+'),
-            new(TokenType.LPAREN, '('),
-            new(TokenType.RPAREN, ')'),
-            new(TokenType.LBRACE, '{'),
-            new(TokenType.RBRACE, '}'),
-            new(TokenType.COMMA, ','),
-            new(TokenType.SEMICOLON, ';'),
-            new(TokenType.EOF, (char)0)
-        };
-
-        foreach (var expectedToken in expectedTokens)
-        {
-            var token = lexer.NextToken();
-            token.Type.Should().Be(expectedToken.Type);
-            token.Literal.Should().Be(expectedToken.Literal);
-        }
+        var lexer = new Lexer(expectedLiteral.ToString());
+        var token = lexer.NextToken();
+        token.Type.Should().Be(type);
+        token.Literal.Should().Be(expectedLiteral.ToString());
     }
 
     [Fact]
@@ -39,8 +30,7 @@ let ten = 10;
 let add = fn(x, y) {
     x + y;
 };
-let result = add(five, ten);
-";
+let result = add(five, ten);";
         var lexer = new Lexer(input);
         var expectedTokens = new List<Token>
         {
@@ -177,6 +167,27 @@ let result = add(five, ten);
             new(TokenType.INT, "10"),
             new(TokenType.NOT_EQ, "!="),
             new(TokenType.INT, "9"),
+            new(TokenType.SEMICOLON, ";"),
+            new(TokenType.EOF, (char)0)
+        };
+
+        foreach (var expectedToken in expectedTokens)
+        {
+            var token = lexer.NextToken();
+            token.Type.Should().Be(expectedToken.Type);
+            token.Literal.Should().Be(expectedToken.Literal);
+        }
+    }
+
+    [Fact]
+    public void It_should_parse_strings()
+    {
+        var input = @"""foobar"";";
+
+        var lexer = new Lexer(input);
+        var expectedTokens = new List<Token>
+        {
+            new(TokenType.STRING, "foobar"),
             new(TokenType.SEMICOLON, ";"),
             new(TokenType.EOF, (char)0)
         };
