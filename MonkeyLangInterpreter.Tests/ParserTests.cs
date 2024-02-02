@@ -102,6 +102,30 @@ public class ParserTests
     }
 
     [Theory]
+    [InlineData("\"hello world\"", "hello world")]
+    public void TestStringLiteralExpression(string input, string expected)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<StringLiteral>();
+
+        var stringLiteral = (StringLiteral)expressionStatement.Expression;
+        stringLiteral.Value.Should().Be(expected);
+        stringLiteral.TokenLiteral().Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData("!5;", "!", 5)]
     [InlineData("-15;", "-", 15)]
     public void TestParsingPrefixExpressions(string input, string @operator, int value)

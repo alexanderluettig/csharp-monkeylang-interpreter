@@ -32,6 +32,7 @@ public class Parser
         NextToken();
 
         RegisterPrefix(TokenType.IDENT, () => new Identifier(_currentToken.Literal));
+        RegisterPrefix(TokenType.STRING, () => new StringLiteral(_currentToken, _currentToken.Literal));
         RegisterPrefix(TokenType.INT, ParseIntegerLiteral);
         RegisterPrefix(TokenType.TRUE, ParseBooleanExpression);
         RegisterPrefix(TokenType.FALSE, ParseBooleanExpression);
