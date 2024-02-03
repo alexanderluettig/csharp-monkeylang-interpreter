@@ -159,6 +159,21 @@ public class EvaluatorTests
         TestIntegerObject(evaluated, expected);
     }
 
+    [Theory]
+    [InlineData("\"Hello World\"", "Hello World")]
+    public void TestStringLiteral(string input, string expected)
+    {
+        var evaluated = TestEval(input);
+        TestStringObject(expected, evaluated);
+    }
+
+    private static void TestStringObject(string expected, IObject evaluated)
+    {
+        evaluated.Should().BeOfType<StringObject>();
+        var result = (StringObject)evaluated;
+        result.Value.Should().Be(expected);
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

@@ -59,6 +59,8 @@ public class Evaluator
                 return Eval(expressionStatement.Expression, environment);
             case IntegerLiteral integerLiteral:
                 return new IntegerObject(integerLiteral.Value);
+            case StringLiteral stringLiteral:
+                return new StringObject(stringLiteral.Value);
             case BooleanExpression booleanExpression:
                 return booleanExpression.Value ? TRUE : FALSE;
             case FunctionLiteral functionLiteral:
