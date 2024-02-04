@@ -50,7 +50,7 @@ public class Evaluator
                     return evaluated;
                 }
                 environment.Set(letStatement.Name.Value, evaluated);
-                return NULL;
+                return evaluated;
             case Identifier identifier:
                 return EvalIdentifier(identifier, environment);
             case IfExpression ifExpression:
@@ -218,6 +218,15 @@ public class Evaluator
             {
                 "==" => leftBoolean.Value == rightBoolean.Value ? TRUE : FALSE,
                 "!=" => leftBoolean.Value != rightBoolean.Value ? TRUE : FALSE,
+                _ => new ErrorObject($"unknown operator: {left.Type()} {@operator} {right.Type()}")
+            };
+        }
+
+        if (left is StringObject leftString && right is StringObject rightString)
+        {
+            return @operator switch
+            {
+                "+" => new StringObject(leftString.Value + rightString.Value),
                 _ => new ErrorObject($"unknown operator: {left.Type()} {@operator} {right.Type()}")
             };
         }

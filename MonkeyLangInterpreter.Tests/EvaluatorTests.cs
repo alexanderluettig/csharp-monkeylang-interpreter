@@ -108,6 +108,7 @@ public class EvaluatorTests
     [InlineData("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN")]
     [InlineData("if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "unknown operator: BOOLEAN + BOOLEAN")]
     [InlineData("foobar", "identifier not found: foobar")]
+    [InlineData("\"Hello\" - \"World\"", "unknown operator: STRING - STRING")]
     public void TestErrorHandling(string input, string expectedMessage)
     {
         var evaluated = TestEval(input);
@@ -162,6 +163,14 @@ public class EvaluatorTests
     [Theory]
     [InlineData("\"Hello World\"", "Hello World")]
     public void TestStringLiteral(string input, string expected)
+    {
+        var evaluated = TestEval(input);
+        TestStringObject(expected, evaluated);
+    }
+
+    [Theory]
+    [InlineData("\"Hello\" + \" \" + \"World\"", "Hello World")]
+    public void TestStringConcatenation(string input, string expected)
     {
         var evaluated = TestEval(input);
         TestStringObject(expected, evaluated);
