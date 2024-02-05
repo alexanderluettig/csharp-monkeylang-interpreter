@@ -9,6 +9,10 @@ public class Evaluator
     private static readonly BooleanObject TRUE = new(true);
     private static readonly BooleanObject FALSE = new(false);
     private static readonly NullObject NULL = new();
+    private static Dictionary<string, Builtin> BUILTINS = new()
+    {
+        ["len"] = new Builtin(BuiltinFunctions.Len),
+    };
     public static IObject Eval(INode node, VariableEnvironment environment)
     {
         switch (node)
@@ -84,15 +88,17 @@ public class Evaluator
 
     private static IObject ApplyFunction(IObject function, List<IObject> args)
     {
-        if (function is not Function)
+        switch (function)
         {
-            return new ErrorObject($"not a function: {function.Type()}");
+            case Function fn:
+                var extendedEnvironment = ExtendFunctionEnvironment(fn, args);
+                var evaluated = Eval(fn.Body, extendedEnvironment);
+                return UnwrapReturnValue(evaluated);
+            case Builtin builtin:
+                return builtin.Fn(args);
+            default:
+                return new ErrorObject($"not a function: {function.Type()}"); ;
         }
-
-        var fn = (Function)function;
-        var extendedEnvironment = ExtendFunctionEnvironment(fn, args);
-        var evaluated = Eval(fn.Body, extendedEnvironment);
-        return UnwrapReturnValue(evaluated);
     }
 
     private static VariableEnvironment ExtendFunctionEnvironment(Function function, List<IObject> args)
@@ -131,7 +137,18 @@ public class Evaluator
 
     private static IObject EvalIdentifier(Identifier identifier, VariableEnvironment environment)
     {
-        return environment.Get(identifier.Value);
+        var value = environment.Get(identifier.Value);
+        if (value is not ErrorObject)
+        {
+            return value;
+        }
+
+        if (BUILTINS.TryGetValue(identifier.Value, out var builtin))
+        {
+            return builtin;
+        }
+
+        return value;
     }
 
     private static IObject EvalProgram(Program program, VariableEnvironment environment)

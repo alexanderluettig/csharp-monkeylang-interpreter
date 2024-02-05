@@ -176,6 +176,28 @@ public class EvaluatorTests
         TestStringObject(expected, evaluated);
     }
 
+    [Theory]
+    [InlineData("len(\"\")", 0)]
+    [InlineData("len(\"four\")", 4)]
+    [InlineData("len(\"hello world\")", 11)]
+    [InlineData("len(1)", "argument to `len` not supported, got INTEGER")]
+    [InlineData("len(\"one\", \"two\")", "wrong number of arguments. got=2, want=1")]
+    public void TestBuiltinFunctions(string input, object expected)
+    {
+        var evaluated = TestEval(input);
+
+        if (expected is int expectedInt)
+        {
+            TestIntegerObject(evaluated, expectedInt);
+        }
+        else
+        {
+            evaluated.Should().BeOfType<ErrorObject>();
+            var error = (ErrorObject)evaluated;
+            error.Message.Should().Be(expected.ToString());
+        }
+    }
+
     private static void TestStringObject(string expected, IObject evaluated)
     {
         evaluated.Should().BeOfType<StringObject>();
