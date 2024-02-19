@@ -1,10 +1,4 @@
-﻿
-
-
-
-
-
-namespace MonkeyLangInterpreter.Core;
+﻿namespace MonkeyLangInterpreter.Core;
 
 public class Lexer
 {
@@ -92,6 +86,12 @@ public class Lexer
             case '"':
                 var stringLiteral = ReadString();
                 token = new Token(TokenType.STRING, stringLiteral);
+                break;
+            case '[':
+                token = new Token(TokenType.LBRACKET, _ch);
+                break;
+            case ']':
+                token = new Token(TokenType.RBRACKET, _ch);
                 break;
             default:
                 if (IsLetter(_ch))

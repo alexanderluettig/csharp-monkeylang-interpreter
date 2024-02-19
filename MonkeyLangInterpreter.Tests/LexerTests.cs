@@ -199,4 +199,29 @@ let result = add(five, ten);";
             token.Literal.Should().Be(expectedToken.Literal);
         }
     }
+
+    [Fact]
+    public void It_should_parse_array_literals()
+    {
+        var input = @"[1, 2];";
+
+        var lexer = new Lexer(input);
+        var expectedTokens = new List<Token>
+        {
+            new(TokenType.LBRACKET, "["),
+            new(TokenType.INT, "1"),
+            new(TokenType.COMMA, ","),
+            new(TokenType.INT, "2"),
+            new(TokenType.RBRACKET, "]"),
+            new(TokenType.SEMICOLON, ";"),
+            new(TokenType.EOF, (char)0)
+        };
+
+        foreach (var expectedToken in expectedTokens)
+        {
+            var token = lexer.NextToken();
+            token.Type.Should().Be(expectedToken.Type);
+            token.Literal.Should().Be(expectedToken.Literal);
+        }
+    }
 }

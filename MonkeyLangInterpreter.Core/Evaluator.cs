@@ -9,7 +9,7 @@ public class Evaluator
     private static readonly BooleanObject TRUE = new(true);
     private static readonly BooleanObject FALSE = new(false);
     private static readonly NullObject NULL = new();
-    private static Dictionary<string, Builtin> BUILTINS = new()
+    private static readonly Dictionary<string, Builtin> BUILTINS = new()
     {
         ["len"] = new Builtin(BuiltinFunctions.Len),
     };

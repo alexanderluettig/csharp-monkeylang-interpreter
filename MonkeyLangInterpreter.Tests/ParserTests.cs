@@ -403,6 +403,32 @@ public class ParserTests
         TestInfixExpression(callExpression.Arguments[2], 4, "+", 5);
     }
 
+    [Fact]
+    public void TestParsingArrayLiterals()
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<ArrayLiteral>();
+
+        var array = (ArrayLiteral)expressionStatement.Expression;
+        array.Elements.Should().HaveCount(3);
+        TestIntegerLiteral(array.Elements[0], 1);
+        TestInfixExpression(array.Elements[1], 2, "*", 2);
+        TestInfixExpression(array.Elements[2], 3, "+", 3);
+    }
+
     private static void TestIdentifier(IExpression expression, string value)
     {
         expression.Should().BeOfType<Identifier>();

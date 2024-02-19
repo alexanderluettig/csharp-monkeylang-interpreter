@@ -41,6 +41,7 @@ public class Parser
         RegisterPrefix(TokenType.FUNCTION, ParseFunctionLiteral);
         RegisterPrefix(TokenType.BANG, ParsePrefixExpression);
         RegisterPrefix(TokenType.MINUS, ParsePrefixExpression);
+        RegisterPrefix(TokenType.LBRACKET, ParseArrayLiteral);
 
         RegisterInfix(TokenType.PLUS, ParseInfixExpression);
         RegisterInfix(TokenType.MINUS, ParseInfixExpression);
@@ -97,6 +98,39 @@ public class Parser
         }
 
         return stmt;
+    }
+
+    private IExpression ParseArrayLiteral()
+    {
+        return new ArrayLiteral(ParseExpressionList(TokenType.RBRACKET));
+    }
+
+    private IEnumerable<IExpression> ParseExpressionList(TokenType end)
+    {
+        List<IExpression> list = [];
+
+        if (PeekTokenIs(end))
+        {
+            NextToken();
+            return list;
+        }
+
+        NextToken();
+        list.Add(ParseExpression(Precedence.LOWEST));
+
+        while (PeekTokenIs(TokenType.COMMA))
+        {
+            NextToken();
+            NextToken();
+            list.Add(ParseExpression(Precedence.LOWEST));
+        }
+
+        if (!ExpectPeek(end))
+        {
+            return null!;
+        }
+
+        return list;
     }
 
     private IExpression ParseExpression(Precedence precedence)
@@ -168,35 +202,7 @@ public class Parser
 
     private CallExpression ParseCallExpression(IExpression function)
     {
-        return new CallExpression(function, ParseCallArguments());
-    }
-
-    private List<IExpression> ParseCallArguments()
-    {
-        List<IExpression> arguments = [];
-
-        if (PeekTokenIs(TokenType.RPAREN))
-        {
-            NextToken();
-            return arguments;
-        }
-
-        NextToken();
-        arguments.Add(ParseExpression(Precedence.LOWEST));
-
-        while (PeekTokenIs(TokenType.COMMA))
-        {
-            NextToken();
-            NextToken();
-            arguments.Add(ParseExpression(Precedence.LOWEST));
-        }
-
-        if (!ExpectPeek(TokenType.RPAREN))
-        {
-            return null!;
-        }
-
-        return arguments;
+        return new CallExpression(function, ParseExpressionList(TokenType.RPAREN));
     }
 
     private FunctionLiteral ParseFunctionLiteral()
