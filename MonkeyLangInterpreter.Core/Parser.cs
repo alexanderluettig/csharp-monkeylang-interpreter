@@ -22,6 +22,7 @@ public class Parser
         { TokenType.SLASH, Precedence.PRODUCT },
         { TokenType.ASTERISK, Precedence.PRODUCT },
         { TokenType.LPAREN, Precedence.CALL },
+        { TokenType.LBRACKET, Precedence.INDEX }
     };
 
     public Parser(Lexer lexer)
@@ -42,6 +43,7 @@ public class Parser
         RegisterPrefix(TokenType.BANG, ParsePrefixExpression);
         RegisterPrefix(TokenType.MINUS, ParsePrefixExpression);
         RegisterPrefix(TokenType.LBRACKET, ParseArrayLiteral);
+        RegisterPrefix(TokenType.LBRACE, ParseHashLiteral);
 
         RegisterInfix(TokenType.PLUS, ParseInfixExpression);
         RegisterInfix(TokenType.MINUS, ParseInfixExpression);
@@ -52,6 +54,40 @@ public class Parser
         RegisterInfix(TokenType.LT, ParseInfixExpression);
         RegisterInfix(TokenType.GT, ParseInfixExpression);
         RegisterInfix(TokenType.LPAREN, ParseCallExpression);
+        RegisterInfix(TokenType.LBRACKET, ParseIndexExpression);
+    }
+
+    private IExpression ParseHashLiteral()
+    {
+        Dictionary<IExpression, IExpression> pairs = [];
+
+        while (!PeekTokenIs(TokenType.RBRACE))
+        {
+            NextToken();
+            var key = ParseExpression(Precedence.LOWEST);
+
+            if (!ExpectPeek(TokenType.COLON))
+            {
+                return null!;
+            }
+
+            NextToken();
+            var value = ParseExpression(Precedence.LOWEST);
+
+            pairs[key] = value;
+
+            if (!PeekTokenIs(TokenType.RBRACE) && !ExpectPeek(TokenType.COMMA))
+            {
+                return null!;
+            }
+        }
+
+        if (!ExpectPeek(TokenType.RBRACE))
+        {
+            return null!;
+        }
+
+        return new HashLiteral(pairs);
     }
 
     public void NextToken()
@@ -98,6 +134,19 @@ public class Parser
         }
 
         return stmt;
+    }
+
+    private IExpression ParseIndexExpression(IExpression expression)
+    {
+        NextToken();
+        var index = ParseExpression(Precedence.LOWEST);
+
+        if (!ExpectPeek(TokenType.RBRACKET))
+        {
+            return null!;
+        }
+
+        return new IndexExpression(expression, index);
     }
 
     private IExpression ParseArrayLiteral()

@@ -12,6 +12,10 @@ public class Evaluator
     private static readonly Dictionary<string, Builtin> BUILTINS = new()
     {
         ["len"] = new Builtin(BuiltinFunctions.Len),
+        ["first"] = new Builtin(BuiltinFunctions.First),
+        ["last"] = new Builtin(BuiltinFunctions.Last),
+        ["rest"] = new Builtin(BuiltinFunctions.Rest),
+        ["push"] = new Builtin(BuiltinFunctions.Push)
     };
     public static IObject Eval(INode node, VariableEnvironment environment)
     {
@@ -81,9 +85,51 @@ public class Evaluator
                     return args[0];
                 }
                 return ApplyFunction(function, args);
+            case ArrayLiteral arrayLiteral:
+                var elements = EvalExpressions(arrayLiteral.Elements, environment);
+                if (elements.Count == 1 && IsError(elements[0]))
+                {
+                    return elements[0];
+                }
+                return new ArrayObject(elements);
+            case IndexExpression indexExpression:
+                var left = Eval(indexExpression.Left, environment);
+                if (IsError(left))
+                {
+                    return left;
+                }
+                var index = Eval(indexExpression.Index, environment);
+                if (IsError(index))
+                {
+                    return index;
+                }
+                return EvalIndexExpression(left, index);
             default:
                 return NULL;
         };
+    }
+
+    private static IObject EvalIndexExpression(IObject left, IObject index)
+    {
+        if (left is ArrayObject array && index is IntegerObject integer)
+        {
+            return EvalArrayIndexExpression(array, integer);
+        }
+
+        return new ErrorObject($"index operator not supported: {left.Type()}");
+    }
+
+    private static IObject EvalArrayIndexExpression(ArrayObject array, IntegerObject integer)
+    {
+        var index = integer.Value;
+        var max = array.Elements.Count - 1;
+
+        if (index < 0 || index > max)
+        {
+            return NULL;
+        }
+
+        return array.Elements[index];
     }
 
     private static IObject ApplyFunction(IObject function, List<IObject> args)

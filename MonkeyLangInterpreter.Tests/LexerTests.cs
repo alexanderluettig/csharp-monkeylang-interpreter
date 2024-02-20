@@ -14,6 +14,9 @@ public class LexerTests
     [InlineData(TokenType.RPAREN, ')')]
     [InlineData(TokenType.LBRACE, '{')]
     [InlineData(TokenType.RBRACE, '}')]
+    [InlineData(TokenType.LBRACKET, '[')]
+    [InlineData(TokenType.RBRACKET, ']')]
+    [InlineData(TokenType.COLON, ':')]
     public void It_should_parse_basic_tokens(TokenType type, char expectedLiteral)
     {
         var lexer = new Lexer(expectedLiteral.ToString());

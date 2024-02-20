@@ -206,6 +206,8 @@ public class ParserTests
     [InlineData("a + add(b * c) + d", "((a + add((b * c))) + d)")]
     [InlineData("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")]
     [InlineData("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")]
+    [InlineData("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)")]
+    [InlineData("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))")]
     public void TestOperatorPrecedenceParsing(string input, string expected)
     {
         var lexer = new Lexer(input);
@@ -427,6 +429,129 @@ public class ParserTests
         TestIntegerLiteral(array.Elements[0], 1);
         TestInfixExpression(array.Elements[1], 2, "*", 2);
         TestInfixExpression(array.Elements[2], 3, "+", 3);
+    }
+
+    [Fact]
+    public void TestParsingIndexExpressions()
+    {
+        var input = "myArray[1 + 1]";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<IndexExpression>();
+
+        var indexExpression = (IndexExpression)expressionStatement.Expression;
+        TestIdentifier(indexExpression.Left, "myArray");
+        TestInfixExpression(indexExpression.Index, 1, "+", 1);
+    }
+
+    [Fact]
+    public void TestParsingHashLiteralsStringKeys()
+    {
+        var input = @"{""one"": 1, ""two"": 2, ""three"": 3}";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<HashLiteral>();
+
+        var hash = (HashLiteral)expressionStatement.Expression;
+        hash.Pairs.Should().HaveCount(3);
+
+        var expected = new Dictionary<string, int>
+        {
+            { "one", 1 },
+            { "two", 2 },
+            { "three", 3 }
+        };
+
+        foreach (var (key, value) in hash.Pairs)
+        {
+            key.Should().BeOfType<StringLiteral>();
+            var stringLiteral = (StringLiteral)key;
+            var expectedValue = expected[stringLiteral.Value];
+            TestIntegerLiteral(value, expectedValue);
+        }
+    }
+
+    [Fact]
+    public void TestParsingEmptyHashLiteral()
+    {
+        var input = "{}";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<HashLiteral>();
+
+        var hash = (HashLiteral)expressionStatement.Expression;
+        hash.Pairs.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TestParsingHashLiteralsWithExpressions()
+    {
+        var input = @"{""one"": 0 + 1, ""two"": 10 - 8, ""three"": 15 / 5}";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var program = parser.ParseProgram();
+        parser.Errors.Should().BeEmpty();
+        program.Should().NotBeNull();
+        program.Statements.Should().HaveCount(1);
+
+        var statement = program.Statements[0];
+        statement.Should().BeOfType<ExpressionStatement>();
+
+        var expressionStatement = (ExpressionStatement)statement;
+        expressionStatement.Expression.Should().BeOfType<HashLiteral>();
+
+        var hash = (HashLiteral)expressionStatement.Expression;
+        hash.Pairs.Should().HaveCount(3);
+
+        var tests = new Dictionary<string, Action<IExpression>>
+        {
+            { "one", x => TestInfixExpression(x, 0, "+", 1) },
+            { "two", x => TestInfixExpression(x, 10, "-", 8) },
+            { "three", x => TestInfixExpression(x, 15, "/", 5) }
+        };
+
+        foreach (var (key, value) in hash.Pairs)
+        {
+            key.Should().BeOfType<StringLiteral>();
+            var stringLiteral = (StringLiteral)key;
+            var testFunc = tests[stringLiteral.Value];
+            testFunc(value);
+        }
     }
 
     private static void TestIdentifier(IExpression expression, string value)

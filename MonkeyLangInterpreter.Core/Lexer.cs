@@ -93,6 +93,9 @@ public class Lexer
             case ']':
                 token = new Token(TokenType.RBRACKET, _ch);
                 break;
+            case ':':
+                token = new Token(TokenType.COLON, _ch);
+                break;
             default:
                 if (IsLetter(_ch))
                 {

@@ -198,6 +198,44 @@ public class EvaluatorTests
         }
     }
 
+    [Theory]
+    [InlineData("let myArray = [1, 2, 3];", 1, 2, 3)]
+    [InlineData("let myArray = [1, 2 * 2, 3 + 3];", 1, 4, 6)]
+    public void TestArrayLiterals(string input, params int[] expected)
+    {
+        var evaluated = TestEval(input);
+        evaluated.Should().BeOfType<ArrayObject>();
+        var result = (ArrayObject)evaluated;
+        for (var i = 0; i < expected.Length; i++)
+        {
+            TestIntegerObject(result.Elements[i], expected[i]);
+        }
+    }
+
+    [Theory]
+    [InlineData("[1, 2, 3][0];", 1)]
+    [InlineData("[1, 2, 3][1];", 2)]
+    [InlineData("[1, 2, 3][2];", 3)]
+    [InlineData("let i = 0; [1][i];", 1)]
+    [InlineData("[1, 2, 3][1 + 1];", 3)]
+    [InlineData("let myArray = [1, 2, 3]; myArray[2];", 3)]
+    [InlineData("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6)]
+    [InlineData("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2)]
+    [InlineData("[1, 2, 3][3]", null)]
+    [InlineData("[1, 2, 3][-1]", null)]
+    public void TestArrayIndexExpressions(string input, int? expected)
+    {
+        var evaluated = TestEval(input);
+        if (expected is not null)
+        {
+            TestIntegerObject(evaluated, expected.Value);
+        }
+        else
+        {
+            evaluated.Should().BeOfType<NullObject>();
+        }
+    }
+
     private static void TestStringObject(string expected, IObject evaluated)
     {
         evaluated.Should().BeOfType<StringObject>();

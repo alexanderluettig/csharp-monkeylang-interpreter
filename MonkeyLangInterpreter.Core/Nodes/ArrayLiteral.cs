@@ -8,7 +8,7 @@ public class ArrayLiteral(IEnumerable<IExpression> expressions) : IExpression
     public List<IExpression> Elements { get; init; } = expressions.ToList();
     public string String()
     {
-        return $"[{string.Join(", ", Elements)}]";
+        return $"[{string.Join(", ", Elements.Select(x => x.String()))}]";
     }
 
     public string TokenLiteral()
