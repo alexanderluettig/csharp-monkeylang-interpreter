@@ -1,6 +1,6 @@
 ﻿namespace MonkeyLangInterpreter.Core.Objects;
 
-public class IntegerObject(int value) : IObject
+public class IntegerObject(int value) : IObject, IHashable
 {
     public int Value { get; set; } = value;
     public string Inspect()
@@ -11,5 +11,10 @@ public class IntegerObject(int value) : IObject
     public ObjectType Type()
     {
         return ObjectType.INTEGER;
+    }
+
+    public HashKey HashKey()
+    {
+        return new HashKey(Type(), (ulong)Value.GetHashCode());
     }
 }

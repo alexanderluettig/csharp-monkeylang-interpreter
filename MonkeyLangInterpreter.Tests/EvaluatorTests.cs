@@ -109,6 +109,7 @@ public class EvaluatorTests
     [InlineData("if (10 > 1) { if (10 > 1) { return true + false; } return 1; }", "unknown operator: BOOLEAN + BOOLEAN")]
     [InlineData("foobar", "identifier not found: foobar")]
     [InlineData("\"Hello\" - \"World\"", "unknown operator: STRING - STRING")]
+    [InlineData(@"{""name"": ""Monkey""}[fn(x) { x }];", "unusable as hash key: FUNCTION")]
     public void TestErrorHandling(string input, string expectedMessage)
     {
         var evaluated = TestEval(input);
@@ -233,6 +234,55 @@ public class EvaluatorTests
         else
         {
             evaluated.Should().BeOfType<NullObject>();
+        }
+    }
+
+    [Fact]
+    public void TestHashLiterals()
+    {
+        var input = "let two = \"two\"; { \"one\": 10 - 9, two: 1 + 1, \"thr\" + \"ee\": 6 / 2, 4: 4, true: 5, false: 6 }";
+        var evaluated = TestEval(input);
+        evaluated.Should().BeOfType<Hash>();
+        var result = (Hash)evaluated;
+
+        var expected = new Dictionary<IHashable, int>
+        {
+            { new StringObject("one"), 1 },
+            { new StringObject("two"), 2 },
+            { new StringObject("three"), 3 },
+            { new IntegerObject(4), 4 },
+            { new BooleanObject(true), 5 },
+            { new BooleanObject(false), 6 }
+        };
+
+        result.Pairs.Should().HaveCount(expected.Count);
+        foreach (var (key, value) in expected)
+        {
+            result.Pairs.Should().ContainKey(key.HashKey());
+            TestIntegerObject(result.Pairs[key.HashKey()].Value, value);
+        }
+    }
+
+    [Fact]
+    public void TestHashIndexExpressions()
+    {
+        var inputString = "{ \"one\": 10 - 9, \"two\": 1 + 1, \"thr\" + \"ee\": 6 / 2 }";
+        var evaluated = TestEval(inputString);
+
+        var tests = new Dictionary<IHashable, int>
+        {
+            { new StringObject("one"), 1 },
+            { new StringObject("two"), 2 },
+            { new StringObject("three"), 3 },
+        };
+
+        evaluated.Should().BeOfType<Hash>();
+        var result = (Hash)evaluated;
+
+        foreach (var (key, expected) in tests)
+        {
+            var pair = result.Pairs[key.HashKey()];
+            TestIntegerObject(pair.Value, expected);
         }
     }
 

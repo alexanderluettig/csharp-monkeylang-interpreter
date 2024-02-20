@@ -104,9 +104,41 @@ public class Evaluator
                     return index;
                 }
                 return EvalIndexExpression(left, index);
+            case HashLiteral hashLiteral:
+                return EvalHashLiteral(hashLiteral, environment);
             default:
                 return NULL;
         };
+    }
+
+    private static IObject EvalHashLiteral(HashLiteral hashLiteral, VariableEnvironment environment)
+    {
+        var pairs = new Dictionary<HashKey, HashPair>();
+
+        foreach (var (key, value) in hashLiteral.Pairs)
+        {
+            var keyEvaluated = Eval(key, environment);
+            if (IsError(keyEvaluated))
+            {
+                return keyEvaluated;
+            }
+
+            if (keyEvaluated is not IHashable hashKey)
+            {
+                return new ErrorObject($"unusable as hash key: {keyEvaluated.Type()}");
+            }
+
+            var valueEvaluated = Eval(value, environment);
+            if (IsError(valueEvaluated))
+            {
+                return valueEvaluated;
+            }
+
+            var hashed = hashKey.HashKey();
+            pairs[hashed] = new HashPair(hashKey, valueEvaluated);
+        }
+
+        return new Hash(pairs);
     }
 
     private static IObject EvalIndexExpression(IObject left, IObject index)
@@ -116,7 +148,27 @@ public class Evaluator
             return EvalArrayIndexExpression(array, integer);
         }
 
+        if (left is Hash hash)
+        {
+            return EvalHashIndexExpression(hash, index);
+        }
+
         return new ErrorObject($"index operator not supported: {left.Type()}");
+    }
+
+    private static IObject EvalHashIndexExpression(Hash hash, IObject index)
+    {
+        if (index is not IHashable hashKey)
+        {
+            return new ErrorObject($"unusable as hash key: {index.Type()}");
+        }
+
+        if (!hash.Pairs.TryGetValue(hashKey.HashKey(), out var pair))
+        {
+            return NULL;
+        }
+
+        return pair.Value;
     }
 
     private static IObject EvalArrayIndexExpression(ArrayObject array, IntegerObject integer)

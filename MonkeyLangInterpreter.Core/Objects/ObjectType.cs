@@ -11,4 +11,6 @@ public enum ObjectType
     STRING,
     BUILTIN,
     ARRAY,
+    HASH,
+    HASH_KEY
 }

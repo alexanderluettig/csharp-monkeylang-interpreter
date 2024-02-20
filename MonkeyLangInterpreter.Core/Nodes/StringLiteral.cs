@@ -2,10 +2,10 @@
 
 namespace MonkeyLangInterpreter.Core.Nodes;
 
-public class StringLiteral(Token token, string value) : IExpression
+public class StringLiteral(Token token) : IExpression
 {
     public Token Token { get; init; } = token;
-    public string Value { get; init; } = value;
+    public string Value => Token.Literal;
     public string String()
     {
         return Token.Literal;
